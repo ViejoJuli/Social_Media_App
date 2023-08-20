@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, auth
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Post
+from .models import Profile, Post, LikePost
 
 
 # Create your views here.
@@ -15,6 +15,34 @@ def index(request):
     # Send user profile into html
     posts = Post.objects.all()
     return render(request, 'index.html', {'user_profile': user_profile, 'posts': posts})
+
+
+@login_required(login_url='signin')
+def like_post(request):
+    username = request.user.username
+    post_id = request.GET.get('post_id')
+
+    post = Post.objects.get(id=post_id)
+
+    # filter is used to get all objects
+    like_filter = LikePost.objects.filter(
+        post_id=post_id, username=username).first()
+
+    print("********************************")
+    print(f"like post is {like_filter}")
+
+    if like_filter == None:
+        print("!!!!!!!!")
+        new_like = LikePost.objects.create(post_id=post_id, username=username)
+        new_like.save()
+        post.no_of_likes += 1
+        post.save()
+        return redirect('/')
+    else:
+        like_filter.delete()
+        post.no_of_likes -= 1
+        post.save()
+        return redirect('/')
 
 
 def signup(request):
